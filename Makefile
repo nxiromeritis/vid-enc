@@ -10,7 +10,8 @@ luts: $(OBJ1)
 %.o: %.c lutbuilder.h
 	$(CC) $(CFLAGS) -c $< -lm
 
-
+open:
+	vim *.c *.h Makefile -p
 .PHONY: clean
 clean:
 	@echo Deletting .o files...
