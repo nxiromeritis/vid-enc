@@ -39,6 +39,7 @@ static void trace(char str[], ...) {
 	int nbits;
 	double *ptr1;
 	int **ptr2;
+	int **ptr3;
 	int col_num;
 	va_list ap;
 
@@ -55,13 +56,18 @@ static void trace(char str[], ...) {
 			printf("};\n");
 
 		}
-		else if (!strcmp(str, "next_state") || !strcmp(str, "rxq")){
+		else if (!strcmp(str, "next_state") || !strcmp(str, "rxq_and_renorm")){
+
 			ptr2 = va_arg(ap, int **);
+
+			if (!strcmp(str, "rxq_and_renorm"))
+				ptr3 = va_arg(ap, int **);
+
 			nbits = va_arg(ap, int);
 
 			printf("%s = {\n", str);
 
-			col_num = (int)pow(2,nbits) << 2*(!strcmp(str, "rxq"));
+			col_num = (int)pow(2,nbits) << 2*(!strcmp(str, "rxq_and_renorm"));
 
 			for(i=0; i<64; i++) {
 				printf("\t{ ");
@@ -72,6 +78,37 @@ static void trace(char str[], ...) {
 			}
 			printf("};\n");
 
+			if (!strcmp(str, "rxq_and_renorm")) {
+				printf("\n");
+				for(i=0; i<64; i++) {
+					printf("\t{ ");
+					for(j=0; j<col_num; j++) {
+						printf("%3d,", ptr3[i][j]);
+					}
+					printf(" },\n");
+				}
+				printf("};\n");
+			}
+		}
+		else if (!strcmp(str, "missing_low")) {
+
+			ptr2 = va_arg(ap, int **);
+			nbits = va_arg(ap, int);
+
+			printf("%s = {\n", str);
+
+			for(i=0; i<64; i++) {
+				printf("\t{ ");
+				for(j=0; j<(int)pow(2,nbits)<<2; j++) {
+					printf("%6d,", ptr2[i][j]);
+				}
+				printf(" },\n");
+			}
+			printf("};\n");
+
+		}
+		else {
+			printf("\nInvalid str argument\n");
 		}
 	}
 
@@ -156,7 +193,7 @@ void calc_next_state(int *next_state[], int nbits){
 
 }
 
-void calc_rxq(int *rxq[], int nbits, double qlps[]) {
+void calc_rxq_and_renorm(int *rxq[], int *renorm[], int nbits, double qlps[]) {
 	int i,j,k,m;
 	int state_tmp;
 	double range_tmp;
@@ -192,9 +229,37 @@ void calc_rxq(int *rxq[], int nbits, double qlps[]) {
 					}
 				}
 				rxq[i][4*j+k] = round(range_tmp);
+				renorm[i][4*j+k] = 0;
+				while((rxq[i][4*j+k]<<renorm[i][4*j+k]) < ((int)pow(2,10+extra_bits)>>2)) {
+					renorm[i][4*j+k]++;
+				}
 			}
 		}
 	}
 
-	trace("rxq", rxq, nbits);
+	trace("rxq_and_renorm", rxq, renorm, nbits);
+}
+
+
+void calc_missing_low(int *missing_low[], int nbits, int *rxq[]) {
+	int i,j,k,m;
+
+	// fill the first set of 4
+	for (i=0; i<64; i++) {
+		for (j=0; j<4; j++) {
+			missing_low[i][j]=0;
+		}
+	}
+
+	for (i=0; i<64; i++) {
+		for (j=1; j<(int)pow(2,nbits); j++) {
+			for (k=0; k<4; k++) {
+				missing_low[i][4*j+k] = 0;
+				for (m=0; m<j; m++) {
+					missing_low[i][4*j+k] += rxq[i][4*m+k];
+				}
+			}
+		}
+	}
+	trace("missing_low", missing_low, nbits);
 }

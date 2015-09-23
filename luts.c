@@ -18,6 +18,10 @@ int **rxq;
 
 int **next_state;
 
+int **renorm;
+
+int **missing_low;
+
 int main(int argc, char *argv[]) {
 	int nbits = 2;
 	int i;
@@ -29,32 +33,41 @@ int main(int argc, char *argv[]) {
 
 	debug = 1;
 
+	next_state = (int **)malloc(64*sizeof(int *));
+	rxq = (int **)malloc(64*sizeof(int *));
+	renorm = (int **)malloc(64*sizeof(int *));
+	missing_low = (int **)malloc(64*sizeof(int *));
+	for(i=0; i<64; i++) {
+		next_state[i] = (int *)malloc((int)pow(2,nbits)*sizeof(int));
+		rxq[i] = (int *)malloc((int)pow(2,nbits)*4*sizeof(int));
+		renorm[i] = (int *)malloc((int)pow(2,nbits)*4*sizeof(int));
+		missing_low[i] = (int *)malloc((int)pow(2, nbits)*4*sizeof(int));
+	}
 
-	// store every state's lps probabilities
+
+	// store every state's lps probabilities to qlps
 	calc_qlps(qlps);
 
-
-	// store all the last state accessed given n bit stream
-	next_state = (int **)malloc(64*sizeof(int *));
-	for(i=0; i<64; i++)
-		next_state[i] = (int *)malloc(pow(2,nbits)*sizeof(int));
+	// store all the last state accessed given n bit stream to next_state
 	calc_next_state(next_state, nbits);
+	// store each new range of the divided integral and correspondig renorm,
+	// to rxq and renorm respectively
+	calc_rxq_and_renorm(rxq, renorm, nbits, qlps);
+
+	// store new low positions to missing_low
+	calc_missing_low(missing_low, nbits, rxq);
 
 
-	// store each new range of the divided integral to rxq
-	rxq = (int **)malloc(64*sizeof(int *));
-	for (i=0; i<64; i++)
-		rxq[i] = (int *)malloc(pow(2,nbits)*4*sizeof(int));
-	calc_rxq(rxq, nbits, qlps);
-
-
-	for(i=0; i<64; i++)
+	for(i=0; i<64; i++) {
 		free(next_state[i]);
-	free(next_state);
-
-	for (i=0; i<64; i++)
 		free(rxq[i]);
+		free(renorm[i]);
+		free(missing_low[i]);
+	}
+	free(next_state);
 	free(rxq);
+	free(renorm);
+	free(missing_low);
 
 	return(0);
 }
