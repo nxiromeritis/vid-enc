@@ -16,3 +16,4 @@ open:
 clean:
 	@echo Deletting .o files...
 	rm -f *.o
+	rm -f luts
