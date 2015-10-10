@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 	calc_next_state(next_state, nbits);
 	// store each new range of the divided integral and correspondig renorm,
 	// to rxq and renorm respectively
-	calc_rxq_and_renorm(rxq, renorm, nbits, qlps);
+	calc_rxq_and_renorm(rxq, renorm, nbits, qlps, 6);
 
 	// store new low positions to missing_low
 	calc_missing_low(missing_low, nbits, rxq);
