@@ -159,10 +159,6 @@ static int shifts(int nbits) {
 			tmp = round((double)tmp*min_prob);
 		}
 	}
-	printf("\n%d bit implementation.\n", nbits);
-	printf("Length of range in bits: %d\n", (10+extra_bits));
-	printf("Minimum range value: \t%d\n", min_range);
-
 	return(extra_bits);
 }
 
@@ -193,14 +189,14 @@ void calc_next_state(int *next_state[], int nbits){
 
 }
 
-void calc_rxq_and_renorm(int *rxq[], int *renorm[], int nbits, double qlps[]) {
+void calc_rxq_and_renorm(int *rxq[], int *renorm[], int nbits, double qlps[], int addbits) {
 	int i,j,k,m;
 	int state_tmp;
 	double range_tmp;
 	int extra_bits;
 
 	//first we need to determine how long the range will be.
-	extra_bits = shifts(nbits);
+	extra_bits = shifts(nbits) + addbits;
 	printf("\nNew Range:");
 	for (i=0; i<4; i++) {
 		range_nbits[i] = range[i] << extra_bits;
@@ -208,6 +204,11 @@ void calc_rxq_and_renorm(int *rxq[], int *renorm[], int nbits, double qlps[]) {
 
 	}
 	printf("\n");
+	printf("\n%d bit implementation.\n", extra_bits);
+	printf("Length of range in bits: %d\n", (10+extra_bits));
+	printf("Minimum range value: \t%d\n", range[0]<<extra_bits);
+
+
 
 	// iterate through states
 	for (i=0; i<64; i++) {
